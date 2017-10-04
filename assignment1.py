@@ -78,6 +78,8 @@ class myGen:
             self.event_times = [set() for i in range(self.max)]     # Initializing 'event_times' size based off 'max' logical clock value
             for process in range(self.num_processes):               # Populating with data from 'processes'
                 for event in self.processes[process]:
+                    if event == 0:
+                        continue
                     self.event_times[event - 1].add(process)
                     
         for event in self.event_times:
