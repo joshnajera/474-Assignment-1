@@ -50,12 +50,16 @@ import  copy
 
 
     #####   Actual Implementation       ###
+    
+    
+    
 class myGen:
     process_positions = []      # Holds processes involved with each Logical Clock Time Stamp
     processes = []              # Holds input data stored as list
     result = []                 # Holds results
     num_processes = 0           # Holds number of processes
     max = 0                     # Holds the maximum Logical Clock Time Stamp value
+    send_receive_count = 0
     
     def __init__(self):
         with open("input.txt") as in_file:
@@ -91,14 +95,15 @@ class myGen:
             print("{Next} - {Current}= ", self.event_times[pos+1] - event)
             if self.event_times[pos+1] - event != set():    # If set difference Next-Current != Empty Set: Then there is a send event
                 print("Set at least one send, set others internal")
+                self.send_receive_count += 1
                 for item_i in event:    # Go through all processes involved in current event
                     print("Making '{}' as send...".format(item_i))
-                    output[item_i].append('s')  # Pick one as send
+                    output[item_i].append('s{}'.format(self.send_receive_count))  # Pick one as send
                     for item_j in event:    # Make the others internal
                         if item_i != item_j:
                             print("Make '{}' internal...".format(item_j))
                             output[item_j].append('i')
-                    print(output)
+                    # print(output)
                     self.generatePossibilities(output, flag+1, pos+1)   # Make next recursive call
                 # flag += 1
             else:   # if the set difference Next-Current == Empty: Then there isn't a send event and all are internal
@@ -107,7 +112,7 @@ class myGen:
                 for item in event:  # Setting all to internal
                     print("Make '{}' internal...".format(item))
                     output[item].append('i')
-                print(output)
+                # print(output)
                 self.generatePossibilities(output, flag, pos+1)
         else:   # Else flag is raised
             possible_receives = event - self.event_times[pos-1]
@@ -115,18 +120,21 @@ class myGen:
                 print("Set a receive event, others internal?")       # TODO: what if more than one send was made?
                 for item_i in possible_receives:
                     print("Make '{}' receive...".format(item_i))
-                    output[item_i].append('r')  # Set one to a receive
+                    output[item_i].append('r{}'.format(self.send_receive_count))  # Set one to a receive
                     for item_j in event - possible_receives:
                         print("Make '{}' internal...".format(item_j))
                         output[item_j].append('i')  # Set the rest to internal
-                print(output)
+                # print(output)
                 self.generatePossibilities(output, flag-1, pos+1)
                 # flag -= 1
             else:
                 print("Last element? No receives left? Must be internal")
                 for item in event:  # Catches the case where this is the last element?
                     output[item].append('i')
-                print(output)
+                for row in output:
+                    for process in row:
+                        print(process, end='\t')
+                    print('')
     # print(i, event)
     
         
