@@ -1,14 +1,15 @@
+'''Handles the evaluation of LC Values as input and generates a matrix of
+    processes and events that match those values'''
 import  copy
-import _operator
-
+import itertools
 
 class MyGen:
     '''Processes input file of logical clock values and generates events that correspond'''
     def __init__(self):
-        self.processes = []              # Holds input data stored as list
-        self.result = []                 # Holds results
-        self.send_receive_count = 0
-        self.max_clock_value = 0         # Holds the maximum Logical Clock Time Stamp value
+        self.processes = []             # Holds input data stored as list
+        self.result = []                # Holds results
+        self.send_receive_count = 0     # Holds the send-receive pair count
+        self.max_clock_value = 0        # Holds the maximum Logical Clock Time Stamp value
 
         with open("input.txt") as in_file:
            # Read input, populate 'processes', get the process count, size 'result' accordingly
@@ -25,13 +26,39 @@ class MyGen:
 
             # Populate 'processes_at_time' with data from 'processes'
             for process in enumerate(self.processes):
-                for event in process[1]:
-                    if event != 0:
-                        self.processes_at_time[event - 1].add(process[0])
+                for event in set(process[1]).difference({0}):
+                    self.processes_at_time[event - 1].add(process[0])
 
         # for event in self.processes_at_time:
         #     print(event)
-        self.generate_possibilities(self.result)     # Calls function to evaluate input
+        if self.validate():
+            print("\nInput valid, processing...")
+            self.generate_possibilities(self.result)     # Calls function to evaluate input
+
+    def validate(self):
+        '''Validates input by iterating through 'processes_at_time'
+            and evaluating'''
+        no_error = True
+
+        for processes in enumerate(self.processes_at_time[:-1]):
+            next_set = self.processes_at_time[processes[0]+1]
+            diff = next_set.difference(processes[1])
+
+            # Empty set => Missing step
+            if processes[1] == set():
+                print("ERROR:".ljust(12)+"missing a clock step.")
+                no_error = False
+
+            # Number of receives in next clock step > number of possible matching senders
+            elif len(diff) > len(processes[1]):
+                print("ERROR:".ljust(12)+"Not enough sends")
+                no_error = False
+
+            # Valid step
+            else:
+                print("Step {}:".format(processes[0] + 1).ljust(12)+"Valid")
+        print("Step {}:".format(len(self.processes_at_time)).ljust(12)+"Last item, Valid by default")
+        return no_error
 
 
     def generate_possibilities(self, working_result, s_flag=0, pos=0):
@@ -40,9 +67,25 @@ class MyGen:
         processes_at_current_time = self.processes_at_time[pos]
         output = copy.deepcopy(working_result)  # Make a copy of working_result...
 
-        # If Send s_flag is not set and this isn't the last item
+        # If Send s_flag is NOT set and this isn't the last item
         if s_flag == 0 and pos < len(self.processes_at_time) -1:
             # If set difference Next-Current != Empty Set: Then there is a send event
+
+            ##### TESTING - START ####  TODO: Handle multiple send/receive events
+
+            # possible_receives = self.processes_at_time[pos+1] - processes_at_current_time
+            # possible_sends = processes_at_current_time - possible_receives
+            # send_combinations = itertools.combinations(possible_sends, len(possible_receives))
+
+            # for combo in send_combinations:
+            #     for item in combo:
+            #         pass
+
+            # for s_process in enumerate(possible_sends):
+            #     output[s_process[1]].append('s{}'.format(self.send_receive_count + s_process[0]))
+
+            ##### TESTING - END  ####
+
             if self.processes_at_time[pos+1] - processes_at_current_time != set():
                 self.send_receive_count += 1
 
@@ -75,12 +118,12 @@ class MyGen:
                         self.send_receive_count += 1
 
                         # Pick one as send
-                        for send_process in processes_at_current_time - {receive_process}:
-                            output[send_process].append('s{}'.format(self.send_receive_count))
+                        for s_process in processes_at_current_time - {receive_process}:
+                            output[s_process].append('s{}'.format(self.send_receive_count))
 
                             # Make the others internal
                             for internal_process in processes_at_current_time \
-                            - {receive_process, send_process}:
+                            - {receive_process, s_process}:
                                 output[internal_process].append('i')
                         self.generate_possibilities(output, s_flag, pos+1)
 
