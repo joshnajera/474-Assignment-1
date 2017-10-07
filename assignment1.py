@@ -61,11 +61,10 @@ class MyGen:
                     output[process].append('i')
                 self.generate_possibilities(output, s_flag, pos+1)
 
-        # Else receive event
+        # Else receive event -- TODO: what if more than one send/receive was made?
         else:
             # Evaluate which current processes might be a receive event
             possible_receives = processes_at_current_time - self.processes_at_time[pos-1]
-            # TODO: what if more than one send/receive was made?
             if possible_receives:
                 for receive_process in possible_receives:
                     # Set one to a receive
@@ -105,4 +104,4 @@ class MyGen:
                 # This is a cheatsy way to end because I didn't implement recursion fully (yet?)
                 exit()
 
-asdf = MyGen()
+ASDF = MyGen()
