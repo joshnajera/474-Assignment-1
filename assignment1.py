@@ -32,8 +32,10 @@ class MyGen:
         # for event in self.processes_at_time:
         #     print(event)
         if self.validate():
-            print("\nInput valid, processing...")
+            print("\nValid input, processing...\n")
             self.generate_possibilities(self.result)     # Calls function to evaluate input
+        else:
+            print("INCORRECT")
 
     def validate(self):
         '''Validates input by iterating through 'processes_at_time'
@@ -53,11 +55,6 @@ class MyGen:
             elif len(diff) > len(processes[1]):
                 print("ERROR:".ljust(12)+"Not enough sends")
                 no_error = False
-
-            # Valid step
-            else:
-                print("Step {}:".format(processes[0] + 1).ljust(12)+"Valid")
-        print("Step {}:".format(len(self.processes_at_time)).ljust(12)+"Last item, Valid by default")
         return no_error
 
 
@@ -66,19 +63,29 @@ class MyGen:
             that occurred at each logical time'''
         processes_at_current_time = self.processes_at_time[pos]
         output = copy.deepcopy(working_result)  # Make a copy of working_result...
+        all_receives = set()
 
-        # If Send s_flag is NOT set and this isn't the last item
-        if s_flag == 0 and pos < len(self.processes_at_time):
-            # If set difference Next-Current != Empty Set: Then there is a send event
+        # If send flag is raised, we need to handle receives
+        if s_flag == 1:
+            possible_receives = processes_at_current_time - self.processes_at_time[pos-1]
+            self.send_receive_count -= len(possible_receives)
+            # Marking each as a receive
+            for rcv_process in possible_receives:
+                s_flag = 0
+                self.send_receive_count += 1
+                all_receives.add(rcv_process)
+                output[rcv_process].append('r{}'.format(self.send_receive_count))
 
-            ##### TESTING - START ####  TODO: Handle multiple send/receive events
+        # After any receives have been processed, process remaining info
+        try:
             possible_receives = self.processes_at_time[pos+1] - processes_at_current_time
-            possible_sends = processes_at_current_time - possible_receives
+            possible_sends = \
+                    processes_at_current_time.difference(possible_receives).difference(all_receives)
             # Generate possible combinations of send processes based on num of following receies
             #   and currently involved processes
             send_combinations = itertools.combinations(possible_sends, len(possible_receives))
 
-            # For each combination
+            # For each combination of possible send events
             for combo in send_combinations:
                 all_sends = set()
                 # First set the send events for each process in the combo
@@ -88,103 +95,23 @@ class MyGen:
                     output[s_process[1]].append('s{}'.format(self.send_receive_count))
                     all_sends.add(s_process[1])
                 # Make remaining processes internal events
-                for remaining_process in processes_at_current_time.difference(all_sends):
+                for remaining_process in \
+                        processes_at_current_time.difference(all_sends).difference(all_receives):
                     output[remaining_process].append('i')
                 self.generate_possibilities(output, s_flag, pos+1)
-            ##### TESTING - END  ####
 
-            ##### Legacy    ####
-            # if self.processes_at_time[pos+1] - processes_at_current_time != set():
-            #     self.send_receive_count += 1
-
-            #     for process in processes_at_current_time:
-            #         # Pick one as send
-            #         output[process].append('s{}'.format(self.send_receive_count))
-            #         # Make the others internal
-            #         for remaining_process in processes_at_current_time - {process}:
-            #             output[remaining_process].append('i')
-
-            #         # Make next recursive call
-            #         self.generate_possibilities(output, s_flag+1, pos+1)
-            # else:
-            #     # Set all to internal
-            #     for process in processes_at_current_time:
-            #         output[process].append('i')
-            #     self.generate_possibilities(output, s_flag, pos+1)
-
-        # Else receive event
-        else:
-            ##### TESTING - START ####  TODO: Handle multiple send/receive events
-
-            possible_receives = processes_at_current_time - self.processes_at_time[pos-1]
-            self.send_receive_count -= len(possible_receives)
-            all_receives = set()
-            for rcv_process in possible_receives:
-                s_flag = 0
-                self.send_receive_count += 1
-                all_receives.add(rcv_process)
-                output[rcv_process].append('r{}'.format(self.send_receive_count))
-
-            possible_receives = self.processes_at_time[pos+1] - processes_at_current_time
-            possible_sends = processes_at_current_time.difference(possible_receives).difference(all_receives)
-            # Generate possible combinations of send processes based on num of following receies
-            #   and currently involved processes
-            send_combinations = itertools.combinations(possible_sends, len(possible_receives))
-
-            # For each combination
-            for combo in send_combinations:
-                all_sends = set()
-                # First set the send events for each process in the combo
-                for s_process in enumerate(combo):
-                    s_flag += 1
-                    self.send_receive_count += 1
-                    output[s_process[1]].append('s{}'.format(self.send_receive_count))
-                    all_sends.add(s_process[1])
-                # Make remaining processes internal events
-                for remaining_process in processes_at_current_time.difference(all_sends).difference(all_receives):
-                    output[remaining_process].append('i')
-                self.generate_possibilities(output, s_flag, pos+1)
-            ##### TESTING - END   ####
-
-            # Evaluate which current processes might be a receive event
-            # possible_receives = processes_at_current_time - self.processes_at_time[pos-1]
-            # if possible_receives:
-            #     for receive_process in possible_receives:
-            #         # Set one to a receive
-            #         output[receive_process].append('r{}'.format(self.send_receive_count))
-
-            #         # Now we have to check if any of the remaining are send events
-            #         if self.processes_at_time[pos+1] - processes_at_current_time != set():
-            #             self.send_receive_count += 1
-
-            #             # Pick one as send
-            #             for s_process in processes_at_current_time - {receive_process}:
-            #                 output[s_process].append('s{}'.format(self.send_receive_count))
-
-            #                 # Make the others internal
-            #                 for internal_process in processes_at_current_time \
-            #                 - {receive_process, s_process}:
-            #                     output[internal_process].append('i')
-            #             self.generate_possibilities(output, s_flag, pos+1)
-
-            #         # No send events, make rest internal
-            #         else:
-            #             for internal_process in processes_at_current_time - possible_receives:
-            #                 output[internal_process].append('i')
-            #             self.generate_possibilities(output, s_flag-1, pos+1)
-
-            # Catches the case where this is the last element?
-            # else:
-            #     for process in processes_at_current_time:
-            #         output[process].append('i')
-
-            #     # Print results
-            #     for row in output:
-            #         for process in row:
-            #             print(process, end='\t')
-            #         print('')
-
-            #     # This is a cheatsy way to end because I didn't implement recursion fully (yet?)
+        # In the case of IndexError, we have hit the last clock time.
+        #   Process remaining input then
+        except IndexError:
+            remaineders = processes_at_current_time - all_receives
+            for remaining_process in remaineders:
+                output[remaining_process].append('i')
+            # Displaying output
+            for process in output:
+                for event in process:
+                    print(str(event).ljust(4), end="")
+                print("")
+            self.result = output
             exit()
 
 ASDF = MyGen()
