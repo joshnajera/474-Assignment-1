@@ -1,17 +1,18 @@
 '''Handles the evaluation of LC Values as input and generates a matrix of
     processes and events that match those values'''
-import  copy
+import copy
+import sys
 import itertools
 
-class MyGen:
+class LogicValueAnalysis:
     '''Processes input file of logical clock values and generates events that correspond'''
-    def __init__(self):
+    def __init__(self, file_name):
         self.processes = []             # Holds input data stored as list
         self.result = []                # Holds results
         self.send_receive_count = 0     # Holds the send-receive pair count
         self.max_clock_value = 0        # Holds the maximum Logical Clock Time Stamp value
 
-        with open("input.txt") as in_file:
+        with open(file_name) as in_file:
            # Read input, populate 'processes', get the process count, size 'result' accordingly
             for line in in_file:
                 self.processes.append([int(i) for i in line.strip().split(' ')])
@@ -114,4 +115,7 @@ class MyGen:
             self.result = output
             exit()
 
-ASDF = MyGen()
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        lva = LogicValueAnalysis(sys.argv[1])
