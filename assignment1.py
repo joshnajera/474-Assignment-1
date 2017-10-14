@@ -2,6 +2,7 @@
     processes and events that match those values'''
 import copy
 import sys
+import os
 import itertools
 
 class LogicValueAnalysis:
@@ -113,7 +114,7 @@ class LogicValueAnalysis:
                     print(str(event).ljust(4), end="")
                 print("")
             self.result = output
-            exit()
+            os._exit(0)
 
 
 if __name__ == "__main__":
