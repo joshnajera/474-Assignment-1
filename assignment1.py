@@ -34,10 +34,10 @@ class LogicValueAnalysis:
         # for event in self.processes_at_time:
         #     print(event)
         if self.validate():
-            print("\nValid input, processing...\n")
+            sys.stdout.write("\nValid input, processing...\n")
             self.generate_possibilities(self.result)     # Calls function to evaluate input
         else:
-            print("INCORRECT")
+            sys.stdout.write("INCORRECT")
 
     def validate(self):
         '''Validates input by iterating through 'processes_at_time'
@@ -50,12 +50,12 @@ class LogicValueAnalysis:
 
             # Empty set => Missing step
             if processes[1] == set():
-                print("ERROR:".ljust(12)+"missing a clock step.")
+                sys.stdout.write("ERROR:".ljust(12)+"missing a clock step.")
                 no_error = False
 
             # Number of receives in next clock step > number of possible matching senders
             elif len(diff) > len(processes[1]):
-                print("ERROR:".ljust(12)+"Not enough sends")
+                sys.stdout.write("ERROR:".ljust(12)+"Not enough sends")
                 no_error = False
         return no_error
 
@@ -111,8 +111,9 @@ class LogicValueAnalysis:
             # Displaying output
             for process in output:
                 for event in process:
-                    print(str(event).ljust(4), end="")
-                print("")
+                    sys.stdout.write(str(event).ljust(4))
+                    # print(str(event).ljust(4), end="")
+                sys.stdout.write("\n")
             self.result = output
             os._exit(0)
 
